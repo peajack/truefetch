@@ -2,6 +2,8 @@
 
 simple fetch-alike program, written in go
 
+![a screenshot, demonstrating example of truefetch output](./truefetch.jpg)
+
 # todo
 
 - support more distros
