@@ -1,3 +1,4 @@
+// truefetch - simple fetch-alike program
 package main
 
 import (
@@ -7,6 +8,7 @@ import (
 	"os/user"
 	"path"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -14,6 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+// ansi colors
 const (
 	BBLACK   = "\033[1;30m"
 	BGRAY    = "\033[1;90m"
@@ -40,7 +43,9 @@ var packageManagers = map[string]string{
 	"unknown": "",
 	"pacman":  "pacman -Qq",
 	"dpkg":    "dpkg -l | tail -n+6",
-	"rpm":     "[[ $(which sqlite3 2>/dev/null) && $? -ne 1 ]] && (sqlite3 /var/lib/rpm/rpmdb.sqlite \"select * from Name\") || rpm -qa",
+	// drop this for now, 'cause it's bash-specific
+	// "rpm":     "[[ $(which sqlite3 2>/dev/null) && $? -ne 1 ]] && (sqlite3 /var/lib/rpm/rpmdb.sqlite \"select * from Name\") || rpm -qa",
+	"rpm":     "rpm -qa",
 	"portage": "qlist -IRv",
 	"xbps":    "xbps-query -l",
 	"apk":     "grep 'P:' /lib/apk/db/installed",
@@ -62,11 +67,13 @@ var prettyNames = map[string]string{
 	"android":   "Android",
 }
 
+// OSName - container for os name
 type OSName struct {
 	name string
 	id   string
 }
 
+// Logo - container for logo
 type Logo struct {
 	col1, col2, col3, col4, col5, col6, col7, col8 string
 	color                                          string
@@ -74,23 +81,24 @@ type Logo struct {
 }
 
 func getUser() string {
+	if runtime.GOOS == "plan9" {
+		return os.Getenv("user")
+	}
 	if currentUser, err := user.Current(); err == nil {
 		return currentUser.Username
 	} else if user := os.Getenv("USER"); user != "" {
 		return user
 	} else if username := os.Getenv("USERNAME"); username != "" {
 		return username
-	} else {
-		return "who are you?"
 	}
+	return "who are you?"
 }
 
 func getShell() string {
 	if shell := os.Getenv("SHELL"); shell != "" {
 		return path.Base(shell)
-	} else {
-		return "unknown"
 	}
+	return "unknown"
 }
 
 func getUname() unix.Utsname {
@@ -133,6 +141,20 @@ func getOS() (osNames OSName) {
 }
 
 func getUptime() string {
+	if runtime.GOOS == "plan9" {
+		rawUptime, err := os.ReadFile("/dev/time")
+		if err != nil {
+			return "unknown"
+		}
+		uptime := strings.Split(string(rawUptime[:]), "  ")
+		third, _ := strconv.Atoi(uptime[2])
+		fourth, _ := strconv.Atoi(uptime[3])
+		sec := third / fourth
+		return fmt.Sprintf(
+			"%d days, %02d:%02d:%02d",
+			sec/86400, sec%86400/3600, sec%86400%3600/60, sec%60,
+		)
+	}
 	sysinfo := unix.Sysinfo_t{}
 	unix.Sysinfo(&sysinfo)
 	uptime := time.Duration(sysinfo.Uptime * int64(time.Second))
