@@ -7,7 +7,7 @@ simple fetch-alike program, written in go
 # todo
 
 - support more distros
-- support other systems (bsd, darwin, maybe even windows)
+- support other systems (bsd, darwin, plan9, maybe even windows)
 - make it faster, though idk how
 
 # credits
