@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -44,6 +46,20 @@ var packageManagers = map[string]string{
 	"apk":     "grep 'P:' /lib/apk/db/installed",
 	"flatpak": "flatpak list --app",
 	"snap":    "snap list",
+	"freebsd": "pkg info | wc -l | tr -d ' '",
+	"openbsd": "/bin/ls -1 /var/db/pkg/ | wc -l | tr -d ' '",
+	"plan9":   "#nope#",
+}
+
+var prettyNames = map[string]string{
+	"freebsd":   "FreeBSD",
+	"openbsd":   "OpenBSD",
+	"netbsd":    "NetBSD",
+	"dragonfly": "DragonflyBSD",
+	"darwin":    "macOS",
+	"ios":       "iOS",
+	"plan9":     "Plan9",
+	"android":   "Android",
 }
 
 type OSName struct {
@@ -58,7 +74,9 @@ type Logo struct {
 }
 
 func getUser() string {
-	if user := os.Getenv("USER"); user != "" {
+	if currentUser, err := user.Current(); err == nil {
+		return currentUser.Username
+	} else if user := os.Getenv("USER"); user != "" {
 		return user
 	} else if username := os.Getenv("USERNAME"); username != "" {
 		return username
@@ -75,31 +93,41 @@ func getShell() string {
 	}
 }
 
-func getKernel() string {
+func getUname() unix.Utsname {
 	u := unix.Utsname{}
 	unix.Uname(&u)
-	return string(u.Release[:])
+	return u
 }
 
 func getOS() (osNames OSName) {
 	osNames = OSName{"Unknown", "_UNKNOWN_"}
-	file, err := os.ReadFile("/etc/os-release")
-	if err != nil {
-		return
-	}
-	text := string(file[:])
-	for _, line := range strings.Split(text, "\n") {
-		key, value, found := strings.Cut(line, "=")
-		value = strings.Trim(value, "\"")
-		if !found {
-			continue
-		} else if key == "NAME" {
-			osNames.name = value
-		} else if key == "ID" {
-			if _, present := getLogo(value); present == true {
-				osNames.id = value
+	switch runtime.GOOS {
+	case "linux":
+		osReleaseFile := "/etc/os-release"
+		if customFile := os.Getenv("TRUEFETCH_OSRELEASE"); customFile != "" {
+			osReleaseFile = customFile
+		}
+		file, err := os.ReadFile(osReleaseFile)
+		if err != nil {
+			return
+		}
+		text := string(file[:])
+		for _, line := range strings.Split(text, "\n") {
+			key, value, found := strings.Cut(line, "=")
+			value = strings.Trim(value, "\"")
+			if !found {
+				continue
+			} else if key == "NAME" {
+				osNames.name = value
+			} else if key == "ID" {
+				if _, present := getLogo(value); present == true {
+					osNames.id = value
+				}
 			}
 		}
+	default:
+		osNames.id = runtime.GOOS
+		osNames.name = prettyNames[runtime.GOOS]
 	}
 	return
 }
@@ -269,6 +297,46 @@ func getLogo(id string) (Logo, bool) {
 			BGREEN,
 			"xbps",
 		},
+		"freebsd": {
+			`             `,
+			`/\,-'''''-,/\`,
+			`\_)       (_/`,
+			`|           |`,
+			`|           |`,
+			` ;         ; `,
+			`  '-_____-'  `,
+			`             `,
+			BRED,
+			"freebsd",
+		},
+		"openbsd": {
+			`      _____    `,
+			`    \-     -/  `,
+			` \_/         \ `,
+			` |        O O |`,
+			` |_  <   )  3 )`,
+			` / \         / `,
+			`    /-_____-\  `,
+			`               `,
+			BYELLOW,
+			"openbsd",
+		},
+		"netbsd":    {},
+		"dragonfly": {},
+		"ios":       {},
+		"macos":     {},
+		"plan9": {
+			`       `,
+			`  (\(\ `,
+			`¸". .. `,
+			`(  . .)`,
+			`|   ° ¡`,
+			`¿     ;`,
+			`c?".UJ"`,
+			`       `,
+			"",
+			"plan9",
+		},
 		"_UNKNOWN_": {
 			`     ___     `,
 			` ___/   \___ `,
@@ -311,6 +379,8 @@ func getPkgs(packageManager string) string {
 	neededManagers := map[string]string{}
 	if packageManager == "" {
 		neededManagers = packageManagers
+	} else if packageManagers[packageManager] == "#nope#" {
+		return ""
 	} else {
 		neededManagers["flatpak"] = packageManagers["flatpak"]
 		neededManagers["snap"] = packageManagers["snap"]
@@ -356,8 +426,7 @@ func getPkgs(packageManager string) string {
 }
 
 func doesExist(command string) bool {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("which %s", command))
-	err := cmd.Run()
+	_, err := exec.LookPath(command)
 	return err == nil
 }
 
@@ -391,19 +460,27 @@ func getInit() string {
 }
 
 func main() {
+	uname := getUname()
 	osName := getOS()
+	kernel := string(uname.Release[:])
 	logo, _ := getLogo(osName.id)
+
+	pkgsLabel := "PKGS"
 	pkgs := getPkgs(logo.packageManager)
+	if pkgs == "" {
+		pkgsLabel = ""
+	}
+
 	format := `
 %[10]s %[1]s      USER%[9]s %[11]s
 %[10]s %[2]s        OS%[9]s %[12]s
 %[10]s %[3]s    KERNEL%[9]s %[13]s
 %[10]s %[4]s    UPTIME%[9]s %[14]s
 %[10]s %[5]s     SHELL%[9]s %[15]s
-%[10]s %[6]s      PKGS%[9]s %[16]s
-%[10]s %[7]s      INIT%[9]s %[17]s
+%[10]s %[6]s      INIT%[9]s %[16]s
+%[10]s %[7]s      %[17]s%[9]s %[18]s
 %[10]s %[8]s %[9]s
     `
-	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, getKernel(), getUptime(), getShell(), pkgs, getInit())
+	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, kernel, getUptime(), getShell(), getInit(), pkgsLabel, pkgs)
 	fmt.Print("\n")
 }
