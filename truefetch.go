@@ -145,12 +145,9 @@ func main() {
 	logo, _ := getLogo(osName.id)
 
 	pkgsLabel := "PKGS"
-	pkgs := ""
-	if runtime.GOOS != "plan9" {
-		pkgs = getPkgs(logo.packageManager)
-		if pkgs == "" {
-			pkgsLabel = ""
-		}
+	pkgs := getPkgs(logo.packageManager)
+	if pkgs == "" {
+		pkgsLabel = ""
 	}
 
 	format := `
