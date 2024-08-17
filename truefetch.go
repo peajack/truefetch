@@ -6,14 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
-	"path"
 	"runtime"
-	"strconv"
 	"strings"
-	"sync"
-	"time"
-
-	"golang.org/x/sys/unix"
 )
 
 // ansi colors
@@ -35,26 +29,8 @@ const (
 	MAGENTA  = "\033[0;35m"
 	CYAN     = "\033[0;36m"
 	WHITE    = "\033[0;37m"
-	RESET    = "\033[0;m"
 	BITAL    = "\033[1;3m"
 )
-
-var packageManagers = map[string]string{
-	"unknown": "",
-	"pacman":  "pacman -Qq",
-	"dpkg":    "dpkg -l | tail -n+6",
-	// drop this for now, 'cause it's bash-specific
-	// "rpm":     "[[ $(which sqlite3 2>/dev/null) && $? -ne 1 ]] && (sqlite3 /var/lib/rpm/rpmdb.sqlite \"select * from Name\") || rpm -qa",
-	"rpm":     "rpm -qa",
-	"portage": "qlist -IRv",
-	"xbps":    "xbps-query -l",
-	"apk":     "grep 'P:' /lib/apk/db/installed",
-	"flatpak": "flatpak list --app",
-	"snap":    "snap list",
-	"freebsd": "pkg info | wc -l | tr -d ' '",
-	"openbsd": "/bin/ls -1 /var/db/pkg/ | wc -l | tr -d ' '",
-	"plan9":   "#nope#",
-}
 
 var prettyNames = map[string]string{
 	"freebsd":   "FreeBSD",
@@ -81,30 +57,10 @@ type Logo struct {
 }
 
 func getUser() string {
-	if runtime.GOOS == "plan9" {
-		return os.Getenv("user")
-	}
 	if currentUser, err := user.Current(); err == nil {
 		return currentUser.Username
-	} else if user := os.Getenv("USER"); user != "" {
-		return user
-	} else if username := os.Getenv("USERNAME"); username != "" {
-		return username
 	}
 	return "who are you?"
-}
-
-func getShell() string {
-	if shell := os.Getenv("SHELL"); shell != "" {
-		return path.Base(shell)
-	}
-	return "unknown"
-}
-
-func getUname() unix.Utsname {
-	u := unix.Utsname{}
-	unix.Uname(&u)
-	return u
 }
 
 func getOS() (osNames OSName) {
@@ -140,311 +96,12 @@ func getOS() (osNames OSName) {
 	return
 }
 
-func getUptime() string {
-	if runtime.GOOS == "plan9" {
-		rawUptime, err := os.ReadFile("/dev/time")
-		if err != nil {
-			return "unknown"
-		}
-		uptime := strings.Split(string(rawUptime[:]), "  ")
-		third, _ := strconv.Atoi(uptime[2])
-		fourth, _ := strconv.Atoi(uptime[3])
-		sec := third / fourth
-		return fmt.Sprintf(
-			"%d days, %02d:%02d:%02d",
-			sec/86400, sec%86400/3600, sec%86400%3600/60, sec%60,
-		)
-	}
-	sysinfo := unix.Sysinfo_t{}
-	unix.Sysinfo(&sysinfo)
-	uptime := time.Duration(sysinfo.Uptime * int64(time.Second))
-	return fmt.Sprint(uptime)
-}
-
-func getLogo(id string) (Logo, bool) {
-	logos := map[string]Logo{
-		"arch": {
-			`      /\      `,
-			`     /  \     `,
-			`    /\   \    `,
-			`   /      \   `,
-			`  /   ,,   \  `,
-			` /   |  |  -\ `,
-			`/_-''    ''-_\`,
-			`              `,
-			BCYAN,
-			"pacman",
-		},
-		"archbang": {
-			`          ____`,
-			`      /\ /   /`,
-			`     /  /   / `,
-			`    /   / /   `,
-			`   /   /_/\   `,
-			`  /   __   \  `,
-			` /   /_/\   \ `,
-			`/_-''    ''-_\`,
-			BCYAN,
-			"pacman",
-		},
-		"arcolinux": {
-			`              `,
-			`      /\      `,
-			`     /  \     `,
-			`    / /\ \    `,
-			`   / /  \ \   `,
-			`  / /    \ \  `,
-			` / / _____\ \ `,
-			"/_/  `----.\\_\\",
-			BBLUE,
-			"pacman",
-		},
-		"opensuse-leap": {
-			`  _______  `,
-			`__|   __ \ `,
-			`     / .\ \`,
-			`     \__/ |`,
-			`   _______|`,
-			`   \_______`,
-			`__________/`,
-			`           `,
-			BGREEN,
-			"rpm",
-		},
-		"debian": {
-			`  _____  `,
-			` /  __ \ `,
-			`|  /    |`,
-			`|  \\___-`,
-			`-_       `,
-			`  --_    `,
-			`         `,
-			`         `,
-			BRED,
-			"dpkg",
-		},
-		"fedora": {
-			`      _____   `,
-			`     /   __)\ `,
-			`     |  /  \ \`,
-			`  ___|  |__/ /`,
-			` / (_    _)_/ `,
-			`/ /  |  |     `,
-			`\ \__/  |     `,
-			` \ (_____/    `,
-			BBLUE,
-			"rpm",
-		},
-		"gentoo": {
-			`   _-----_   `,
-			`  (       \  `,
-			`  \    0   \ `,
-			`   \        )`,
-			`   /      _/ `,
-			`  (     _-   `,
-			`  \____-     `,
-			`             `,
-			BMAGENTA,
-			"portage",
-		},
-		"ubuntu": {
-			`           `,
-			`         _ `,
-			`     ---(_)`,
-			` _/  ---  \`,
-			`(_) |   |  `,
-			`  \  --- _/`,
-			`     ---(_)`,
-			`           `,
-			BRED,
-			"dpkg",
-		},
-		"linuxmint": {
-			` _____________ `,
-			`|_            \`,
-			` |  | _____  | `,
-			` |  | | | |  | `,
-			` |  | | | |  | `,
-			` |  \_____/  | `,
-			` \___________/ `,
-			`               `,
-			BGREEN,
-			"dpkg",
-		},
-		"manjaro": {
-			` ________  __ `,
-			`|       | |  |`,
-			`|   ____| |  |`,
-			`|  |  __  |  |`,
-			`|  | |  | |  |`,
-			`|  | |  | |  |`,
-			`|  | |  | |  |`,
-			`|__| |__| |__|`,
-			BGREEN,
-			"pacman",
-		},
-		"artix": {
-			`      /\      `,
-			`     /  \     `,
-			`    /''.,\    `,
-			`   /     ',   `,
-			`  /      ',\  `,
-			` /   ,.''.  \ `,
-			`/.,''     ''.\`,
-			`              `,
-			BCYAN,
-			"pacman",
-		},
-		"alpine": {
-			`    /\ /\    `,
-			`   /  \  \   `,
-			`  /    \  \  `,
-			` /      \  \ `,
-			`/        \  \`,
-			`          \  `,
-			`             `,
-			`             `,
-			BBLUE,
-			"apk",
-		},
-		"void": {
-			`      _____    `,
-			`   _  \____ -  `,
-			`  / / ____ \ \ `,
-			` / / /    \ \ \`,
-			` | |  VOID  | |`,
-			` \ \ \____/ / /`,
-			`  \ \____  /_/ `,
-			`   -_____\     `,
-			BGREEN,
-			"xbps",
-		},
-		"freebsd": {
-			`             `,
-			`/\,-'''''-,/\`,
-			`\_)       (_/`,
-			`|           |`,
-			`|           |`,
-			` ;         ; `,
-			`  '-_____-'  `,
-			`             `,
-			BRED,
-			"freebsd",
-		},
-		"openbsd": {
-			`      _____    `,
-			`    \-     -/  `,
-			` \_/         \ `,
-			` |        O O |`,
-			` |_  <   )  3 )`,
-			` / \         / `,
-			`    /-_____-\  `,
-			`               `,
-			BYELLOW,
-			"openbsd",
-		},
-		"netbsd":    {},
-		"dragonfly": {},
-		"ios":       {},
-		"macos":     {},
-		"plan9": {
-			`       `,
-			`  (\(\ `,
-			`¸". .. `,
-			`(  . .)`,
-			`|   ° ¡`,
-			`¿     ;`,
-			`c?".UJ"`,
-			`       `,
-			"",
-			"plan9",
-		},
-		"_UNKNOWN_": {
-			`     ___     `,
-			` ___/   \___ `,
-			`/   '---'   \`,
-			`--_______--' `,
-			`     / \     `,
-			`    /   \    `,
-			`   /     \   `,
-			`             `,
-			BWHITE,
-			"unknown",
-		},
-		"linux": {
-			`    .--.   `,
-			`   |o_o |  `,
-			`   |:_/ |  `,
-			`  /   \ \  `,
-			` (|     | )`,
-			`/'\_   _/'\`,
-			`\___)=(___/`,
-			`           `,
-			BWHITE,
-			"unknown",
-		},
-	}
-	logos["opensuse-tumbleweed"] = logos["opensuse-leap"]
-	logo, present := logos[id]
-	return logo, present
-}
-
 func wcL(s string) int {
 	n := strings.Count(s, "\n")
 	if !strings.HasSuffix(s, "\n") {
 		n++
 	}
 	return n
-}
-
-func getPkgs(packageManager string) string {
-	neededManagers := map[string]string{}
-	if packageManager == "" {
-		neededManagers = packageManagers
-	} else if packageManagers[packageManager] == "#nope#" {
-		return ""
-	} else {
-		neededManagers["flatpak"] = packageManagers["flatpak"]
-		neededManagers["snap"] = packageManagers["snap"]
-		neededManagers[packageManager] = packageManagers[packageManager]
-	}
-
-	packageCounts := make(chan string, len(neededManagers))
-
-	var wg sync.WaitGroup
-	for manager, command := range neededManagers {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			cmd := exec.Command("sh", "-c", command)
-			stdout, err := cmd.Output()
-
-			if err != nil {
-				return
-			}
-
-			count := wcL(string(stdout))
-
-			packageCounts <- fmt.Sprintf(
-				"%d (%s)",
-				count,
-				manager,
-			)
-		}()
-	}
-
-	go func() {
-		wg.Wait()
-		close(packageCounts)
-	}()
-
-	var countStrings []string
-
-	for count := range packageCounts {
-		countStrings = append(countStrings, count)
-	}
-
-	return strings.Join(countStrings, ", ")
 }
 
 func doesExist(command string) bool {
@@ -482,9 +139,9 @@ func getInit() string {
 }
 
 func main() {
-	uname := getUname()
+	//uname := getUname() // why does/did this fn exist?
 	osName := getOS()
-	kernel := string(uname.Release[:])
+	kernel := getKernel()
 	logo, _ := getLogo(osName.id)
 
 	pkgsLabel := "PKGS"
