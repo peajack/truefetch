@@ -44,3 +44,7 @@ func getKernel() string {
 	}
 	return string(contentBytes)
 }
+
+func getPkgs(packageManager string) string {
+	return "None are needed"
+}
