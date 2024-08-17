@@ -12,6 +12,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+const MIBIBYTE_SIZE = 1048576
+
 const (
 	BBLACK   = "\033[1;30m"
 	BGRAY    = "\033[1;90m"
@@ -390,6 +392,16 @@ func getInit() string {
 	return "unknown"
 }
 
+func getMemory() string {
+	m := unix.Sysinfo_t{}
+	if unix.Sysinfo(&m) != nil {
+		return "unknown"
+	}
+	totalMemory := m.Totalram
+	usedMemory := totalMemory - m.Freeram - m.Bufferram - m.Sharedram
+	return fmt.Sprintf("%dMiB / %dMiB", usedMemory/MIBIBYTE_SIZE, totalMemory/MIBIBYTE_SIZE)
+}
+
 func main() {
 	osName := getOS()
 	logo, _ := getLogo(osName.id)
@@ -402,8 +414,8 @@ func main() {
 %[10]s %[5]s     SHELL%[9]s %[15]s
 %[10]s %[6]s      PKGS%[9]s %[16]s
 %[10]s %[7]s      INIT%[9]s %[17]s
-%[10]s %[8]s %[9]s
+%[10]s %[8]s    MEMORY%[9]s %[18]s
     `
-	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, getKernel(), getUptime(), getShell(), pkgs, getInit())
+	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, getKernel(), getUptime(), getShell(), pkgs, getInit(), getMemory())
 	fmt.Print("\n")
 }
