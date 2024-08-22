@@ -1,3 +1,5 @@
+//go:build !openbsd && !freebsd && && netbsd
+
 package main
 
 import (
@@ -7,9 +9,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+/*
+#include <time.h>
+struct timespec get_ts(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts;
+}
+*/
+import "C"
+
 func getUptime() string {
-	ts := unix.Timespec{}
-	err := unix.ClockGettime(unix.CLOCK_MONOTONIC, &ts)
+	ts := C.get_ts()
 	if err != nil {
 		return "unknown"
 	}

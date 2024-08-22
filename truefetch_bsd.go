@@ -1,4 +1,4 @@
-//go:build openbsd || freebsd
+//go:build (openbsd || freebsd) && !netbsd
 
 package main
 

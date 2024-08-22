@@ -124,9 +124,8 @@ func getInit() string {
 		if _, err := os.Stat("/etc/init.d"); err == nil {
 			if doesExist("openrc") {
 				return "openrc"
-			} else {
-				return "SysV-style"
 			}
+			return "SysV-style"
 		} else if _, err := os.Stat("/etc/rc.d"); err == nil {
 			return "BSD-style rc.d"
 		}
