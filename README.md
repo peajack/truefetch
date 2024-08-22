@@ -11,6 +11,7 @@ simple fetch-alike program, written in go
 
 # todo
 
+- unify freebsd/openbsd-specific files?
 - support more distros
 - support other systems (bsd, darwin, plan9, maybe even windows)
 - make it faster, though idk how

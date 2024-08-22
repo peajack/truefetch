@@ -1,6 +1,5 @@
-//go:build freebsd
+//go:build openbsd
 
-// FreeBSD-specific calls
 package main
 
 import (
@@ -12,11 +11,11 @@ import (
 
 func getUptime() string {
 	ts := unix.Timespec{}
-	err := unix.ClockGettime(unix.CLOCK_MONOTONIC, &ts)
+	err := unix.ClockGettime(unix.CLOCK_BOOTTIME, &ts)
 	if err != nil {
 		return "unknown"
 	}
-	uptime := time.Duration(ts.Sec * int64(time.Second)) // ignore the linter, it should be int64
+	uptime := time.Duration(ts.Sec * int64(time.Second))
 	return fmt.Sprint(uptime)
 }
 
