@@ -110,7 +110,7 @@ func doesExist(command string) bool {
 }
 
 func getInit() string {
-	cmd := exec.Command("ps", "-p", "1", "-o", "comm=")
+	cmd := exec.Command("/bin/ps", "-p", "1", "-o", "comm=")
 	stdout, err := cmd.Output()
 	if err != nil {
 		return "unknown"
@@ -119,6 +119,15 @@ func getInit() string {
 
 	if exe == "runit" {
 		return "runit"
+	}
+	if exe == "launchd" {
+		return "launchd"
+	}
+	if _, err := os.Stat("/run/systemd/system"); err == nil {
+		return "systemd"
+	}
+	if _, err := os.Stat("/run/s6/current"); err == nil {
+		return "s6"
 	}
 	if exe == "init" {
 		if _, err := os.Stat("/etc/init.d"); err == nil {
@@ -129,15 +138,6 @@ func getInit() string {
 		} else if _, err := os.Stat("/etc/rc.d"); err == nil {
 			return "BSD-style rc.d"
 		}
-	}
-	if exe == "launchd" {
-		return "launchd"
-	}
-	if _, err := os.Stat("/run/systemd/system"); err == nil {
-		return "systemd"
-	}
-	if _, err := os.Stat("/run/s6/current"); err == nil {
-		return "s6"
 	}
 
 	return "unknown"
