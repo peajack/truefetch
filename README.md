@@ -2,16 +2,15 @@
 
 simple fetch-alike program, written in go
 
-![a screenshot, demonstrating example of truefetch output](./truefetch.jpg)
+![a screenshot, demonstrating example of truefetch output](./screenshot_void.jpg)
 
-![truefetch on plan9](./plan9_screenshot.jpg)
+![truefetch on plan9](./screenshot_plan9.jpg)
 
-![truefetch on freebsd](./freebsd_screenshot.jpg)
+![truefetch on freebsd](./screenshot_freebsd.jpg)
 
 
 # todo
 
-- unify freebsd/openbsd-specific files?
 - support more distros
 - support other systems (bsd, darwin, plan9, maybe even windows)
 - make it faster, though idk how

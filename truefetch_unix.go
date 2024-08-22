@@ -79,6 +79,9 @@ func getPkgs(packageManager string) string {
 
 	var wg sync.WaitGroup
 	for manager, command := range neededManagers {
+		if command == "" {
+			continue
+		}
 		wg.Add(1)
 		go func(manager, command string) {
 			defer wg.Done()
