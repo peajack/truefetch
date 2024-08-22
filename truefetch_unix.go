@@ -63,6 +63,7 @@ var packageManagers = map[string]string{
 	"snap":    "snap list",
 	"freebsd": "pkg info",
 	"openbsd": "/bin/ls -1 /var/db/pkg/",
+	"pkgsrc":  "pkg_info",
 }
 
 func getPkgs(packageManager string) string {

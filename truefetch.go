@@ -110,7 +110,7 @@ func doesExist(command string) bool {
 }
 
 func getInit() string {
-	cmd := exec.Command("sh", "-c", "ps -p 1 -o comm=")
+	cmd := exec.Command("ps", "-p", "1", "-o", "comm=")
 	stdout, err := cmd.Output()
 	if err != nil {
 		return "unknown"
@@ -145,9 +145,7 @@ func getInit() string {
 
 func main() {
 	osName := getOS()
-	kernel := getKernel()
 	logo, _ := getLogo(osName.id)
-
 	pkgs := getPkgs(logo.packageManager)
 
 	format := `
@@ -160,6 +158,15 @@ func main() {
 %[10]s %[7]s      PKGS%[9]s %[17]s
 %[10]s %[8]s    MEMORY%[9]s %[18]s
     `
-	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, kernel, getUptime(), getShell(), getInit(), pkgs, getMemory())
+	fmt.Printf(
+		format,
+		logo.col1, logo.col2, logo.col3, logo.col4,
+		logo.col5, logo.col6, logo.col7, logo.col8,
+		RESET, logo.color,
+		getUser(), osName.name,
+		getKernel(), getUptime(),
+		getShell(), getInit(),
+		pkgs, getMemory(),
+	)
 	fmt.Print("\n")
 }
