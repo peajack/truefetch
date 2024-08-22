@@ -4,6 +4,11 @@ simple fetch-alike program, written in go
 
 ![a screenshot, demonstrating example of truefetch output](./truefetch.jpg)
 
+![truefetch on plan9](./plan9_screenshot.jpg)
+
+![truefetch on freebsd](./freebsd_screenshot.jpg)
+
+
 # todo
 
 - support more distros

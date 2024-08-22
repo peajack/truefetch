@@ -10,11 +10,11 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"time"
 
 	"golang.org/x/sys/unix"
 )
 
+// some consts
 const (
 	RESET = "\033[0;m"
 )
@@ -23,36 +23,31 @@ func getShell() string {
 	if shell := os.Getenv("SHELL"); shell != "" {
 		return path.Base(shell)
 	}
-	return "" // TODO: Try to get the parent process of truefetch, which should be the shell. ($0). Only applies to this file and truefetch_windows.go if implemented in the future
-}
-
-func getUname() string {
-	return getUtsnameField(func(u *unix.Utsname) []byte {
-		return u.Sysname[:]
-	})
+	pid := os.Getppid()
+	f, err := os.Readlink(fmt.Sprintf("/proc/%d/exe", pid))
+	if err != nil {
+		return ""
+	}
+	return path.Base(f)
 }
 
 func getKernel() string {
-	return getUtsnameField(func(u *unix.Utsname) []byte {
-		return u.Release[:]
-	})
-}
-
-func getUptime() string {
-	sysinfo := unix.Sysinfo_t{}
-	unix.Sysinfo(&sysinfo)
-	uptime := time.Duration(sysinfo.Uptime * int64(time.Second))
-	return fmt.Sprint(uptime)
-}
-
-func getUtsnameField(fieldFunc func(*unix.Utsname) []byte) string {
-	u := unix.Utsname{}
-	if err := unix.Uname(&u); err != nil {
-		return ""
+	uname := unix.Utsname{}
+	err := unix.Uname(&uname)
+	if err != nil {
+		return "unknown"
 	}
-	result := fieldFunc(&u)
-	return strings.TrimRight(string(result), "\x00")
+	return string(uname.Release[:])
 }
+
+// thanks dheison, but it didnt work :(
+//func getMemory() string {
+//	return getSysinfoField(func(s *unix.Sysinfo_t) string {
+//		totalMemory := s.Totalram
+//		usedMemory := totalMemory - s.Freeram - s.Bufferram - s.Sharedram
+//		return fmt.Sprintf("%dMiB / %dMiB", usedMemory/MIBIBYTE, totalMemory/MIBIBYTE)
+//	})
+//}
 
 var packageManagers = map[string]string{
 	"unknown": "",
@@ -66,17 +61,14 @@ var packageManagers = map[string]string{
 	"apk":     "grep 'P:' /lib/apk/db/installed",
 	"flatpak": "flatpak list --app",
 	"snap":    "snap list",
-	"freebsd": "pkg info | wc -l | tr -d ' '",
-	"openbsd": "/bin/ls -1 /var/db/pkg/ | wc -l | tr -d ' '",
-	"plan9":   "#nope#",
+	"freebsd": "pkg info",
+	"openbsd": "/bin/ls -1 /var/db/pkg/",
 }
 
 func getPkgs(packageManager string) string {
 	neededManagers := map[string]string{}
 	if packageManager == "" {
 		neededManagers = packageManagers
-	} else if packageManagers[packageManager] == "#nope#" {
-		return ""
 	} else {
 		neededManagers["flatpak"] = packageManagers["flatpak"]
 		neededManagers["snap"] = packageManagers["snap"]

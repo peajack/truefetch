@@ -110,7 +110,7 @@ func doesExist(command string) bool {
 }
 
 func getInit() string {
-	cmd := exec.Command("sh", "-c", "ps -eo comm= | head -n 1")
+	cmd := exec.Command("sh", "-c", "ps -p 1 -o comm=")
 	stdout, err := cmd.Output()
 	if err != nil {
 		return "unknown"
@@ -121,8 +121,14 @@ func getInit() string {
 		return "runit"
 	}
 	if exe == "init" {
-		if doesExist("openrc") {
-			return "openrc"
+		if _, err := os.Stat("/etc/init.d"); err == nil {
+			if doesExist("openrc") {
+				return "openrc"
+			} else {
+				return "SysV-style"
+			}
+		} else if _, err := os.Stat("/etc/rc.d"); err == nil {
+			return "BSD-style rc.d"
 		}
 	}
 	if exe == "launchd" {
@@ -139,16 +145,11 @@ func getInit() string {
 }
 
 func main() {
-	//uname := getUname() // why does/did this fn exist?
 	osName := getOS()
 	kernel := getKernel()
 	logo, _ := getLogo(osName.id)
 
-	pkgsLabel := "PKGS"
 	pkgs := getPkgs(logo.packageManager)
-	if pkgs == "" {
-		pkgsLabel = ""
-	}
 
 	format := `
 %[10]s %[1]s      USER%[9]s %[11]s
@@ -157,9 +158,9 @@ func main() {
 %[10]s %[4]s    UPTIME%[9]s %[14]s
 %[10]s %[5]s     SHELL%[9]s %[15]s
 %[10]s %[6]s      INIT%[9]s %[16]s
-%[10]s %[7]s      %[17]s%[9]s %[18]s
-%[10]s %[8]s %[9]s
+%[10]s %[7]s      PKGS%[9]s %[17]s
+%[10]s %[8]s    MEMORY%[9]s %[18]s
     `
-	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, kernel, getUptime(), getShell(), getInit(), pkgsLabel, pkgs)
+	fmt.Printf(format, logo.col1, logo.col2, logo.col3, logo.col4, logo.col5, logo.col6, logo.col7, logo.col8, RESET, logo.color, getUser(), osName.name, kernel, getUptime(), getShell(), getInit(), pkgs, getMemory())
 	fmt.Print("\n")
 }

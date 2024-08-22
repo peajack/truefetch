@@ -1,6 +1,7 @@
 //go:build plan9
 
-// Unix specific instructions that are used to fetch system information in [truefetch](https://github.com/peajack/truefetch)
+// Plan9 specific instructions that are used to fetch system information in [truefetch](https://github.com/peajack/truefetch)
+// thanks diplomat
 package main
 
 import (
@@ -45,6 +46,10 @@ func getKernel() string {
 	return string(contentBytes)
 }
 
-func getPkgs(packageManager string) string {
+func getMemory() string {
+
+}
+
+func getPkgs(_ string) string {
 	return "None are needed"
 }
