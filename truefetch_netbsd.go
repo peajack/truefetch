@@ -5,8 +5,6 @@ package main
 import (
 	"fmt"
 	"time"
-
-	"golang.org/x/sys/unix"
 )
 
 /*
@@ -21,10 +19,7 @@ import "C"
 
 func getUptime() string {
 	ts := C.get_ts()
-	if err != nil {
-		return "unknown"
-	}
-	uptime := time.Duration(ts.Sec * int64(time.Second))
+	uptime := time.Duration(int64(ts.tv_sec) * int64(time.Second))
 	return fmt.Sprint(uptime)
 }
 
