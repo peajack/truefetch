@@ -231,6 +231,7 @@ func getLogo(id string) (Logo, bool) {
 			BWHITE,
 			"dpkg",
 		},
+		"ghostbsd": {},
 		"darwin": {
 			`        .:'   `,
 			`    __ :'__   `,

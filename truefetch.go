@@ -110,12 +110,15 @@ func doesExist(command string) bool {
 }
 
 func getInit() string {
-	cmd := exec.Command("/bin/ps", "-p", "1", "-o", "comm=")
-	stdout, err := cmd.Output()
+	cmd := exec.Command("ps", "-o", "comm=", "-p", "1")
+	comm, err := cmd.Output()
 	if err != nil {
-		return "unknown"
+		comm, err = os.ReadFile("/proc/1/comm")
+		if err != nil {
+			return "unknown"
+		}
 	}
-	exe := strings.TrimSuffix(string(stdout), "\n")
+	exe := strings.TrimSuffix(string(comm), "\n")
 
 	if exe == "runit" {
 		return "runit"
