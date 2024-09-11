@@ -3,11 +3,16 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"os/user"
 	"runtime"
 	"strings"
+	"time"
+
+	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 // ansi colors
@@ -41,6 +46,7 @@ var prettyNames = map[string]string{
 	"ios":       "iOS",
 	"plan9":     "Plan9",
 	"android":   "Android",
+	"windows":   "Windows",
 }
 
 // OSName - container for os name
@@ -94,6 +100,22 @@ func getOS() (osNames OSName) {
 		osNames.name = prettyNames[runtime.GOOS]
 	}
 	return
+}
+
+func getMemory() string {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return "0 MB/0 MB (∞ %)"
+	}
+	return fmt.Sprintf("%v MB/%v MB (%v%%)", v.Used/1024/1024, v.Total/1024/1024, math.Round(v.UsedPercent))
+}
+
+func getUptime() string {
+	u, err := host.Uptime()
+	if err != nil {
+		return "∞ "
+	}
+	return fmt.Sprint(time.Duration(u * uint64(time.Second)))
 }
 
 func wcL(s string) int {

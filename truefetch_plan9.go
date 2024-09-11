@@ -6,9 +6,7 @@ package main
 
 import (
 	"os"
-	"os/exec"
 	"path"
-	"strings"
 )
 
 const (
@@ -17,17 +15,6 @@ const (
 
 func getUname() string {
 	return os.Getenv("sysname")
-}
-
-func getUptime() string {
-	cmd := exec.Command("uptime")
-	stdout, err := cmd.Output()
-	if err != nil {
-		return ""
-	}
-	uptime := strings.ReplaceAll(string(stdout), "\n", "")
-	fields := strings.Fields(uptime)
-	return strings.Join(fields[2:], " ")
 }
 
 func getShell() string {
@@ -44,10 +31,6 @@ func getKernel() string {
 		return "" // Here, we shouldn't handle the error. But it SHOULD BE handled in Unix. This Function should return an error type
 	}
 	return string(contentBytes)
-}
-
-func getMemory() string {
-
 }
 
 func getPkgs(_ string) string {
