@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/shirou/gopsutil/v4/process"
 	"golang.org/x/sys/unix"
 )
 
@@ -19,16 +20,21 @@ const (
 	RESET = "\033[0;m"
 )
 
+func getShellFromEnv() string {
+	return path.Base(os.Getenv("SHELL"))
+}
+
 func getShell() string {
-	if shell := os.Getenv("SHELL"); shell != "" {
-		return path.Base(shell)
-	}
 	pid := os.Getppid()
-	f, err := os.Readlink(fmt.Sprintf("/proc/%d/exe", pid))
+	proc, err := process.NewProcess(int32(pid))
 	if err != nil {
-		return ""
+		return getShellFromEnv()
 	}
-	return path.Base(f)
+	cmd, err := proc.Cmdline()
+	if err != nil {
+		return getShellFromEnv()
+	}
+	return path.Base(cmd)
 }
 
 func getKernel() string {
@@ -83,9 +89,7 @@ func getPkgs(packageManager string) string {
 		if command == "" {
 			continue
 		}
-		wg.Add(1)
-		go func(manager, command string) {
-			defer wg.Done()
+		wait(&wg, func() {
 			cmd := exec.Command("/bin/sh", "-c", command)
 			stdout, err := cmd.Output()
 
@@ -100,7 +104,7 @@ func getPkgs(packageManager string) string {
 				count,
 				manager,
 			)
-		}(manager, command)
+		})
 	}
 
 	go func() {

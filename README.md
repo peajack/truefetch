@@ -13,7 +13,7 @@ simple fetch-alike program, written in go
 
 - support more distros
 - support other systems (bsd, darwin, plan9, maybe even windows)
-- make it faster, though idk how
+- ~~make it faster, though idk how~~ it is already as fast as afetch (at least on my machine!)
 
 # credits
 

@@ -1,1 +1,3 @@
 truefetch
+*.pprof
+*.out

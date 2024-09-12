@@ -7,12 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"os/user"
+	"path"
 	"runtime"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/host"
 	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/shirou/gopsutil/v4/process"
 )
 
 // ansi colors
@@ -60,6 +63,32 @@ type Logo struct {
 	col1, col2, col3, col4, col5, col6, col7, col8 string
 	color                                          string
 	packageManager                                 string
+}
+
+type Result struct {
+	name   string
+	result string
+}
+
+func wait(wg *sync.WaitGroup, routine func()) {
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		routine()
+	}()
+}
+
+func wcL(s string) int {
+	n := strings.Count(s, "\n")
+	if !strings.HasSuffix(s, "\n") {
+		n++
+	}
+	return n
+}
+
+func doesExist(command string) bool {
+	_, err := exec.LookPath(command)
+	return err == nil
 }
 
 func getUser() string {
@@ -118,29 +147,16 @@ func getUptime() string {
 	return fmt.Sprint(time.Duration(u * uint64(time.Second)))
 }
 
-func wcL(s string) int {
-	n := strings.Count(s, "\n")
-	if !strings.HasSuffix(s, "\n") {
-		n++
-	}
-	return n
-}
-
-func doesExist(command string) bool {
-	_, err := exec.LookPath(command)
-	return err == nil
-}
-
 func getInit() string {
-	cmd := exec.Command("ps", "-o", "comm=", "-p", "1")
-	comm, err := cmd.Output()
+	proc, err := process.NewProcess(1)
 	if err != nil {
-		comm, err = os.ReadFile("/proc/1/comm")
-		if err != nil {
-			return "unknown"
-		}
+		return "unknown"
 	}
-	exe := strings.TrimSuffix(string(comm), "\n")
+	cmdline, err := proc.Cmdline()
+	if err != nil {
+		return "unknown"
+	}
+	exe := path.Base(cmdline)
 
 	if exe == "runit" {
 		return "runit"
@@ -167,7 +183,6 @@ func getInit() string {
 func main() {
 	osName := getOS()
 	logo, _ := getLogo(osName.id)
-	pkgs := getPkgs(logo.packageManager)
 
 	format := `
 %[10]s %[1]s      USER%[9]s %[11]s
@@ -178,16 +193,37 @@ func main() {
 %[10]s %[6]s      INIT%[9]s %[16]s
 %[10]s %[7]s      PKGS%[9]s %[17]s
 %[10]s %[8]s    MEMORY%[9]s %[18]s
-    `
+
+`
+	info := make(chan Result, 7)
+
+	var wg sync.WaitGroup
+	wait(&wg, func() { info <- Result{"user", getUser()} })
+	wait(&wg, func() { info <- Result{"krnl", getKernel()} })
+	wait(&wg, func() { info <- Result{"uptime", getUptime()} })
+	wait(&wg, func() { info <- Result{"sh", getShell()} })
+	wait(&wg, func() { info <- Result{"init", getInit()} })
+	wait(&wg, func() { info <- Result{"mem", getMemory()} })
+	wait(&wg, func() { info <- Result{"pkgs", getPkgs(logo.packageManager)} })
+
+	go func() {
+		wg.Wait()
+		close(info)
+	}()
+
+	results := map[string]string{}
+	for result := range info {
+		results[result.name] = result.result
+	}
+
 	fmt.Printf(
 		format,
 		logo.col1, logo.col2, logo.col3, logo.col4,
 		logo.col5, logo.col6, logo.col7, logo.col8,
 		RESET, logo.color,
-		getUser(), osName.name,
-		getKernel(), getUptime(),
-		getShell(), getInit(),
-		pkgs, getMemory(),
+		results["user"], osName.name,
+		results["krnl"], results["uptime"],
+		results["sh"], results["init"],
+		results["pkgs"], results["mem"],
 	)
-	fmt.Print("\n")
 }

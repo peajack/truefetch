@@ -13,10 +13,6 @@ const (
 	RESET = ""
 )
 
-func getUname() string {
-	return os.Getenv("sysname")
-}
-
 func getShell() string {
 	if shell := os.Getenv("SHELL"); shell != "" {
 		return path.Base(shell)

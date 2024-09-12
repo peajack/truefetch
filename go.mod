@@ -1,4 +1,4 @@
-module peajack/truefetch
+module github.com/peajack/truefetch
 
 go 1.23
 
