@@ -86,7 +86,7 @@ func getPkgs(packageManager string) string {
 		wg.Add(1)
 		go func(manager, command string) {
 			defer wg.Done()
-			cmd := exec.Command("sh", "-c", command)
+			cmd := exec.Command("/bin/sh", "-c", command)
 			stdout, err := cmd.Output()
 
 			if err != nil {

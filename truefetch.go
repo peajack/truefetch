@@ -144,17 +144,13 @@ func getInit() string {
 
 	if exe == "runit" {
 		return "runit"
-	}
-	if exe == "launchd" {
+	} else if exe == "launchd" {
 		return "launchd"
-	}
-	if _, err := os.Stat("/run/systemd/system"); err == nil {
+	} else if _, err := os.Stat("/run/systemd/system"); err == nil {
 		return "systemd"
-	}
-	if _, err := os.Stat("/run/s6/current"); err == nil {
+	} else if _, err := os.Stat("/run/s6/current"); err == nil {
 		return "s6"
-	}
-	if exe == "init" {
+	} else if exe == "init" {
 		if _, err := os.Stat("/etc/init.d"); err == nil {
 			if doesExist("openrc") {
 				return "openrc"
