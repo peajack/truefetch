@@ -2,13 +2,18 @@
 
 simple fetch-alike program, written in go
 
-![a screenshot, demonstrating example of truefetch output](./truefetch.jpg)
+![a screenshot, demonstrating example of truefetch output](./screenshot_void.jpg)
+
+![truefetch on plan9](./screenshot_plan9.jpg)
+
+![truefetch on freebsd](./screenshot_freebsd.jpg)
+
 
 # todo
 
 - support more distros
 - support other systems (bsd, darwin, plan9, maybe even windows)
-- make it faster, though idk how
+- ~~make it faster, though idk how~~ it is already as fast as afetch (at least on my machine!)
 
 # credits
 
