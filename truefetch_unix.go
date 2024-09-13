@@ -30,11 +30,15 @@ func getShell() string {
 	if err != nil {
 		return getShellFromEnv()
 	}
-	cmd, err := proc.Cmdline()
+	exe, err := proc.Exe()
 	if err != nil {
+		cmd, err := proc.Cmdline()
+		if err != nil {
+			return path.Base(cmd)
+		}
 		return getShellFromEnv()
 	}
-	return path.Base(cmd)
+	return path.Base(exe)
 }
 
 func getKernel() string {
