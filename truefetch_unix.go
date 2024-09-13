@@ -70,6 +70,7 @@ var packageManagers = map[string]string{
 	"freebsd": "pkg info",
 	"openbsd": "/bin/ls -1 /var/db/pkg/",
 	"pkgsrc":  "pkg_info",
+	"android": "echo \"$(pm list packages --user 0 2>&1 </dev/null)\" | tr ' ' '\n'",
 }
 
 func getPkgs(packageManager string) string {
@@ -97,11 +98,9 @@ func getPkgs(packageManager string) string {
 				return
 			}
 
-			count := wcL(string(stdout))
-
 			packageCounts <- fmt.Sprintf(
 				"%d (%s)",
-				count,
+				wcL(string(stdout)),
 				manager,
 			)
 		})

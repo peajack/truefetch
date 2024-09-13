@@ -169,7 +169,7 @@ func getLogo(id string) (Logo, bool) {
 			`                    `,
 			`                    `,
 			BGREEN,
-			"unknown",
+			"android",
 		},
 		"freebsd": {
 			`             `,

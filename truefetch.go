@@ -64,6 +64,7 @@ type Logo struct {
 	packageManager                                 string
 }
 
+// Result - way to grab results from goroutines
 type Result struct {
 	name   string
 	result string
