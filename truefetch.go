@@ -179,16 +179,6 @@ func getInit() string {
 	return "unknown"
 }
 
-func getMemory() string {
-	m := unix.Sysinfo_t{}
-	if unix.Sysinfo(&m) != nil {
-		return "unknown"
-	}
-	totalMemory := m.Totalram
-	usedMemory := totalMemory - m.Freeram - m.Bufferram - m.Sharedram
-	return fmt.Sprintf("%dMiB / %dMiB", usedMemory/MIBIBYTE_SIZE, totalMemory/MIBIBYTE_SIZE)
-}
-
 func main() {
 	osName := getOS()
 	logo, _ := getLogo(osName.id)
