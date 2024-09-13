@@ -47,7 +47,8 @@ func getKernel() string {
 	if err != nil {
 		return "unknown"
 	}
-	return string(uname.Release[:])
+	version, _, _ := strings.Cut(string(uname.Release[:]), "-")
+	return version
 }
 
 // thanks dheison, but it didnt work :(
