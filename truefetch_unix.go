@@ -80,6 +80,44 @@ func getUptime() string {
 //	})
 //}
 
+func getInit() string {
+	var cmdline string
+	proc, err := process.NewProcess(1)
+	if err == nil {
+		cmdline, err = proc.Cmdline()
+		if err != nil {
+			return "unknown"
+		}
+	} else {
+		cmdline, err = os.Readlink("/proc/1/exe")
+		if err != nil {
+			return "unknown"
+		}
+	}
+	exe := path.Base(cmdline)
+
+	if exe == "runit" {
+		return "runit"
+	} else if exe == "launchd" {
+		return "launchd"
+	} else if _, err := os.Stat("/run/systemd/system"); err == nil {
+		return "systemd"
+	} else if _, err := os.Stat("/run/s6/current"); err == nil {
+		return "s6"
+	} else if exe == "init" {
+		if _, err := os.Stat("/etc/init.d"); err == nil {
+			if doesExist("openrc") {
+				return "openrc"
+			}
+			return "SysV-style"
+		} else if _, err := os.Stat("/etc/rc.d"); err == nil {
+			return "BSD-style rc.d"
+		}
+	}
+
+	return "unknown"
+}
+
 var packageManagers = map[string]string{
 	"unknown": "",
 	"pacman":  "pacman -Qq",

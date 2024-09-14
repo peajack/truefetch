@@ -42,6 +42,10 @@ func getKernel() string {
 	return string(contentBytes)
 }
 
+func getInit() string {
+	return ""
+}
+
 func getPkgs(_ string) string {
-	return "None are needed"
+	return "none are needed"
 }
