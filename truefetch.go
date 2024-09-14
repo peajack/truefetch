@@ -134,9 +134,9 @@ func main() {
 %[10]s %[3]s    KERNEL%[9]s %[13]s
 %[10]s %[4]s    UPTIME%[9]s %[14]s
 %[10]s %[5]s     SHELL%[9]s %[15]s
-%[10]s %[6]s      INIT%[9]s %[16]s
-%[10]s %[7]s      PKGS%[9]s %[17]s
-%[10]s %[8]s    MEMORY%[9]s %[18]s
+%[10]s %[6]s    MEMORY%[9]s %[16]s
+%[10]s %[7]s      %[19]s %[9]s%[17]s
+%[10]s %[8]s      %[20]s %[9]s%[18]s
 
 `
 	info := make(chan Result, 7)
@@ -160,6 +160,14 @@ func main() {
 		results[result.name] = result.result
 	}
 
+	var havePkgs, haveInit string
+	if results["pkgs"] != "" {
+		havePkgs = "PKGS"
+	}
+	if results["init"] != "" {
+		haveInit = "INIT"
+	}
+
 	fmt.Printf(
 		format,
 		logo.col1, logo.col2, logo.col3, logo.col4,
@@ -167,7 +175,8 @@ func main() {
 		RESET, logo.color,
 		results["user"], osName.name,
 		results["krnl"], results["uptime"],
-		results["sh"], results["init"],
-		results["pkgs"], results["mem"],
+		results["sh"], results["mem"],
+		results["pkgs"], results["init"],
+		havePkgs, haveInit,
 	)
 }

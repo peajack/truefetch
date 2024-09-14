@@ -47,5 +47,5 @@ func getInit() string {
 }
 
 func getPkgs(_ string) string {
-	return "none are needed"
+	return ""
 }

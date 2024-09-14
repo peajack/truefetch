@@ -58,9 +58,9 @@ func getKernel() string {
 func getMemory() string {
 	v, err := mem.VirtualMemory()
 	if err != nil {
-		return "0 MB/0 MB (∞ %)"
+		return "0/0 MB (∞ %)"
 	}
-	return fmt.Sprintf("%v MB/%v MB (%v%%)", v.Used/1024/1024, v.Total/1024/1024, math.Round(v.UsedPercent))
+	return fmt.Sprintf("%v/%v MB (%v%%)", v.Used/1024/1024, v.Total/1024/1024, math.Round(v.UsedPercent))
 }
 
 func getUptime() string {
@@ -86,12 +86,12 @@ func getInit() string {
 	if err == nil {
 		cmdline, err = proc.Cmdline()
 		if err != nil {
-			return "unknown"
+			return ""
 		}
 	} else {
 		cmdline, err = os.Readlink("/proc/1/exe")
 		if err != nil {
-			return "unknown"
+			return ""
 		}
 	}
 	exe := path.Base(cmdline)
@@ -115,7 +115,7 @@ func getInit() string {
 		}
 	}
 
-	return "unknown"
+	return ""
 }
 
 var packageManagers = map[string]string{
