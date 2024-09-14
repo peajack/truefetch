@@ -148,13 +148,18 @@ func getUptime() string {
 }
 
 func getInit() string {
+	var cmdline string
 	proc, err := process.NewProcess(1)
-	if err != nil {
-		return "unknown"
-	}
-	cmdline, err := proc.Cmdline()
-	if err != nil {
-		return "unknown"
+	if err == nil {
+		cmdline, err = proc.Cmdline()
+		if err != nil {
+			return "unknown"
+		}
+	} else {
+		cmdline, err = os.Readlink("/proc/1/exe")
+		if err != nil {
+			return "unknown"
+		}
 	}
 	exe := path.Base(cmdline)
 
