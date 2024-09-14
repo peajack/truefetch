@@ -6,7 +6,8 @@ package main
 
 import (
 	"os"
-	"path"
+	"os/exec"
+	"strings"
 )
 
 const (
@@ -14,10 +15,22 @@ const (
 )
 
 func getShell() string {
-	if shell := os.Getenv("SHELL"); shell != "" {
-		return path.Base(shell)
-	}
 	return "rc"
+}
+
+func getUptime() string {
+	cmd := exec.Command("uptime")
+	stdout, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	uptime := strings.ReplaceAll(string(stdout), "\n", "")
+	fields := strings.Fields(uptime)
+	return strings.Join(fields[2:], " ")
+}
+
+func getMemory() string {
+	return "N/A"
 }
 
 func getKernel() string {

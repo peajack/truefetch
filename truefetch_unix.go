@@ -5,12 +5,16 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/shirou/gopsutil/v4/host"
+	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/process"
 	"golang.org/x/sys/unix"
 )
@@ -49,6 +53,22 @@ func getKernel() string {
 	}
 	version, _, _ := strings.Cut(string(uname.Release[:]), "-")
 	return version
+}
+
+func getMemory() string {
+	v, err := mem.VirtualMemory()
+	if err != nil {
+		return "0 MB/0 MB (∞ %)"
+	}
+	return fmt.Sprintf("%v MB/%v MB (%v%%)", v.Used/1024/1024, v.Total/1024/1024, math.Round(v.UsedPercent))
+}
+
+func getUptime() string {
+	u, err := host.Uptime()
+	if err != nil {
+		return "∞ "
+	}
+	return fmt.Sprint(time.Duration(u * uint64(time.Second)))
 }
 
 // thanks dheison, but it didnt work :(
