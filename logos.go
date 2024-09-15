@@ -242,7 +242,7 @@ func getLogo(id string) (Logo, bool) {
 			"  `.__.-.__.' ",
 			`              `,
 			BWHITE,
-			"Cellar",
+			"homebrew",
 		},
 		"windows": {
 			`                `,
