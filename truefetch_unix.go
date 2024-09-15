@@ -134,6 +134,7 @@ var packageManagers = map[string]string{
 	"openbsd": "/bin/ls -1 /var/db/pkg/",
 	"pkgsrc":  "pkg_info",
 	"android": "echo \"$(pm list packages --user 0 2>&1 </dev/null)\" | tr ' ' '\n'",
+	"Cellar":  "ls /usr/local/Cellar/* | grep ':'",
 }
 
 func getPkgs(packageManager string) string {
