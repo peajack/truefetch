@@ -5,10 +5,10 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -60,7 +60,16 @@ func getMemory() string {
 	if err != nil {
 		return "0/0 MB (∞ %)"
 	}
-	return fmt.Sprintf("%v/%v MB (%v%%)", v.Used/1024/1024, v.Total/1024/1024, math.Round(v.UsedPercent))
+	var used uint64
+	switch runtime.GOOS {
+	case "darwin", "netbsd", "openbsd", "freebsd":
+		used = v.Active / 1024 / 1024
+	default:
+		used = v.Used / 1024 / 1024
+	}
+	total := v.Total / 1024 / 1024
+	usedPercent := (float32(used) / float32(total)) * 100
+	return fmt.Sprintf("%d/%d MB (%.2f%%)", used, total, usedPercent)
 }
 
 func getUptime() string {
