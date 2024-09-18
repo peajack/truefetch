@@ -52,15 +52,15 @@ type OSName struct {
 
 // Logo - container for logo
 type Logo struct {
-	col1, col2, col3, col4, col5, col6, col7, col8 string
-	color                                          string
-	packageManager                                 string
+	Col1, Col2, Col3, Col4, Col5, Col6, Col7, Col8 string
+	Color                                          string
+	PackageManager                                 string
 }
 
 // Result - way to grab results from goroutines
 type Result struct {
-	name   string
-	result string
+	Name   string
+	Result string
 }
 
 func wait(wg *sync.WaitGroup, routine func()) {
@@ -148,7 +148,7 @@ func main() {
 	wait(&wg, func() { info <- Result{"sh", getShell()} })
 	wait(&wg, func() { info <- Result{"init", getInit()} })
 	wait(&wg, func() { info <- Result{"mem", getMemory()} })
-	wait(&wg, func() { info <- Result{"pkgs", getPkgs(logo.packageManager)} })
+	wait(&wg, func() { info <- Result{"pkgs", getPkgs(logo.PackageManager)} })
 
 	go func() {
 		wg.Wait()
@@ -157,7 +157,7 @@ func main() {
 
 	results := map[string]string{}
 	for result := range info {
-		results[result.name] = result.result
+		results[result.Name] = result.Result
 	}
 
 	var havePkgs, haveInit string
@@ -168,11 +168,18 @@ func main() {
 		haveInit = "INIT"
 	}
 
+	reset := RESET
+	color := logo.Color
+	if colors := os.Getenv("TRUEFETCH_NOCOLORS"); colors != "" {
+		reset = ""
+		color = ""
+	}
+
 	fmt.Printf(
 		format,
-		logo.col1, logo.col2, logo.col3, logo.col4,
-		logo.col5, logo.col6, logo.col7, logo.col8,
-		RESET, logo.color,
+		logo.Col1, logo.Col2, logo.Col3, logo.Col4,
+		logo.Col5, logo.Col6, logo.Col7, logo.Col8,
+		reset, color,
 		results["user"], osName.name,
 		results["krnl"], results["uptime"],
 		results["sh"], results["mem"],

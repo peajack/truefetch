@@ -45,14 +45,25 @@ func getShell() string {
 	return path.Base(exe)
 }
 
+func convertRelease(raw []byte) string {
+	sane := make([]byte, 0, len(raw))
+	for _, char := range raw {
+		if char == 0x00 {
+			break
+		}
+		sane = append(sane, byte(char))
+	}
+	return string(sane)
+}
+
 func getKernel() string {
 	uname := unix.Utsname{}
 	err := unix.Uname(&uname)
 	if err != nil {
 		return "unknown"
 	}
-	version, _, _ := strings.Cut(string(uname.Release[:]), "-")
-	return version
+	version, _, _ := strings.Cut(convertRelease(uname.Release[:]), "-")
+	return strings.TrimSpace(version)
 }
 
 func getMemory() string {
