@@ -85,10 +85,14 @@ func doesExist(command string) bool {
 }
 
 func getUser() string {
+	var username, host string
 	if currentUser, err := user.Current(); err == nil {
-		return currentUser.Username
+		username = currentUser.Username
 	}
-	return "who are you?"
+	if hostname, err := os.Hostname(); err == nil {
+		host = hostname
+	}
+	return username + "@" + host
 }
 
 func getOS() (osNames OSName) {
@@ -129,15 +133,15 @@ func main() {
 	logo, _ := getLogo(osName.id)
 
 	format := `
-%[10]s %[1]s      USER%[9]s %[11]s
-%[10]s %[2]s        OS%[9]s %[12]s
+%[10]s %[1]s
+%[10]s %[2]s    %[21]s%[11]s%[9]s
 %[10]s %[3]s    KERNEL%[9]s %[13]s
 %[10]s %[4]s    UPTIME%[9]s %[14]s
 %[10]s %[5]s     SHELL%[9]s %[15]s
 %[10]s %[6]s    MEMORY%[9]s %[16]s
 %[10]s %[7]s      %[19]s %[9]s%[17]s
 %[10]s %[8]s      %[20]s %[9]s%[18]s
-
+    %[21]s%[12]s%[9]s
 `
 	info := make(chan Result, 7)
 
@@ -170,9 +174,11 @@ func main() {
 
 	reset := RESET
 	color := logo.Color
+	bold := BWHITE
 	if colors := os.Getenv("TRUEFETCH_NOCOLORS"); colors != "" {
 		reset = ""
 		color = ""
+		bold = ""
 	}
 
 	fmt.Printf(
@@ -185,5 +191,6 @@ func main() {
 		results["sh"], results["mem"],
 		results["pkgs"], results["init"],
 		havePkgs, haveInit,
+		bold,
 	)
 }
