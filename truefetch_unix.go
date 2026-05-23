@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -71,7 +72,13 @@ func getMemory() string {
 		return "0/0 MB (∞ %)"
 	}
 	total := v.Total / 1024 / 1024
-	used := (v.Total - v.Available) / 1024 / 1024
+	var used uint64
+	if runtime.GOOS == "openbsd" {
+		// there is different logic
+		used = v.Active / 1024 / 1024
+	} else {
+		used = (v.Total - v.Available) / 1024 / 1024
+	}
 	usedPercent := (float32(used) / float32(total)) * 100
 	return fmt.Sprintf("%d/%d MB (%.2f%%)", used, total, usedPercent)
 }
